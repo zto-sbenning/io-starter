@@ -1,0 +1,7 @@
+{
+  "name": "zto-ins",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "ionic-angular"
+}
