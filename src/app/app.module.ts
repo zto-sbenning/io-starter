@@ -32,6 +32,8 @@ import { SignUpPageModule } from '../pages/sign-up/sign-up.module';
 import { NavEffects, NavFacade } from '../stores/nav.store';
 import { appRoutes } from './app.routes';
 import { StorageFacade, StorageEffects } from '../stores/storage.store';
+import { StoreGeneratorProvider } from '../providers/store-generator/store-generator';
+import { AppEffects, AppFacade } from '../stores/app.store';
 
 @NgModule({
   declarations: [
@@ -48,7 +50,8 @@ import { StorageFacade, StorageEffects } from '../stores/storage.store';
     StoreModule.forRoot(reducers),
     EffectsModule.forRoot([
       NavEffects,
-      StorageEffects
+      StorageEffects,
+      AppEffects
     ]),
     StoreDevtoolsModule.instrument({ maxAge: 25 }),
     FirstUsePageModule,
@@ -68,6 +71,7 @@ import { StorageFacade, StorageEffects } from '../stores/storage.store';
     StatusBar,
     SplashScreen,
     {provide: ErrorHandler, useClass: IonicErrorHandler},
+    StoreGeneratorProvider,
     StorageProvider,
     UserProvider,
     NavEffects,
@@ -75,6 +79,8 @@ import { StorageFacade, StorageEffects } from '../stores/storage.store';
     NavFacade,
     StorageFacade,
     StorageEffects,
+    AppFacade,
+    AppEffects
   ]
 })
 export class AppModule {}

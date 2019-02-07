@@ -1,0 +1,46 @@
+{
+    "defs": {},
+    "selector": "app",
+    "state": {
+        "ready": "boolean",
+        "loadingCountRef": "number",
+        "loading": "boolean",
+        "error": "Error"
+    },
+    "initial": {
+        "ready": false,
+        "loadingCountRef": 0,
+        "loading": false,
+        "error": null
+    },
+    "actions": {
+        "setReady": {
+            "type": "Message",
+            "value": "{ ready: boolean }"
+        },
+        "setLoading": {
+            "type": "Message",
+            "value": "{ loading: boolean }"
+        },
+        "setError": {
+            "type": "Message",
+            "value": "{ error: Error }"
+        },
+        "loadingStart": {
+            "type": "Message",
+            "value": "void"
+        },
+        "loadingStop": {
+            "type": "Message",
+            "value": "void"
+        },
+        "initializeRequest": {
+            "type": "RequestMessage",
+            "value": "void"
+        },
+        "initializeResponse": {
+            "type": "ResponseMessage",
+            "value": "void"
+        }
+    }
+}

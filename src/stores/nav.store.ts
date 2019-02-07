@@ -172,31 +172,6 @@ export class NavEffects {
   ) {
     setTimeout(() => this.menuCtrl.enable(false), 0);
   }
-  @Effect({ dispatch: true })
-  firstPage$ = Observable.timer(0).pipe(
-    switchMap(() => {
-      const correlationId = Uuid();
-      const loadReq$ = Observable.of(new LoadRequestStorage(undefined, correlationId));
-      const loadRep$ = this.actions$.pipe(
-        ofType(StorageActionType.loadResponse),
-        filter((loadResponse: LoadResponseStorage) => loadResponse.correlationId === correlationId),
-        first()
-      );
-      const rootFactory = (loadResponse: LoadResponseStorage) => {
-        if (loadResponse.payload.entries.FIRST_USE === false) {
-          return [
-            new ChangeRootNav({ id: 'WELCOME' }, correlationId)
-          ] as any;
-        } else {
-          return [
-            // new SaveRequestStorage({ entries: { FIRST_USE: false } }, correlationId),
-            new ChangeRootNav({ id: 'FIRST_USE' }, correlationId)
-          ] as any;
-        }
-      };
-      return Observable.concat(loadReq$, loadRep$.pipe(mergeMap(rootFactory)));
-    })
-  );
   @Effect({ dispatch: false })
   changeRootLog$ = this.actions$.pipe(
     ofType(NavActionType.changeRoot),

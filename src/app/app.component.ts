@@ -8,6 +8,7 @@ import { ZtoRouteContext } from '../models/zto-routes';
 import { NavProvider } from '../providers/nav/nav';
 import { StorageFacade } from '../stores/storage.store';
 import { switchMap, map, filter } from 'rxjs/operators';
+import { AppFacade } from '../stores/app.store';
 
 @Component({
   templateUrl: 'app.html'
@@ -31,7 +32,8 @@ export class MyApp {
     public splashScreen: SplashScreen,
     public navFacade: NavFacade,
     public navProvider: NavProvider,
-    public storageFacade: StorageFacade
+    public storageFacade: StorageFacade,
+    public appFacade: AppFacade
   ) {
     this.initializeApp();
   }
@@ -39,6 +41,8 @@ export class MyApp {
   initializeApp() {
 
     this.platformReady$.pipe(
+      switchMap(() => this.appFacade.ready$),
+      filter((ready: boolean) => ready)
     ).subscribe(() => {
       // Okay, so the platform is ready and our plugins are available.
       // Here you can do any higher level native things you might need.
@@ -51,7 +55,6 @@ export class MyApp {
     // Reset the content nav to have just this page
     // we wouldn't want the back button to show in this scenario
 
-    // this.nav.setRoot(page.component);
     this.navFacade.changeTab({ id })
   }
 
