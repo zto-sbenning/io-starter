@@ -2,7 +2,7 @@ import * as _CryptoJS from 'crypto-js';
 import * as _Uuid from 'uuid/v4';
 import { Observable } from 'rxjs';
 import { Message } from '../models/message';
-import { OperatorFunction, MonoTypeOperatorFunction } from 'rxjs/interfaces';
+import { MonoTypeOperatorFunction } from 'rxjs/interfaces';
 import { filter, first } from 'rxjs/operators';
 
 export const CryptoJS  = _CryptoJS,
