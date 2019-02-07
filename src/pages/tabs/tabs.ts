@@ -4,6 +4,7 @@ import { ZtoRouteContext } from '../../models/zto-routes';
 import { NavFacade } from '../../stores/nav.store';
 import { NavProvider } from '../../providers/nav/nav';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 /**
  * Generated class for the TabsPage page.
@@ -19,9 +20,9 @@ import { Observable } from 'rxjs';
 })
 export class TabsPage {
 
-  tabs$: Observable<ZtoRouteContext[]> = this.navFacade.tabs$;
+  tabs$: Observable<ZtoRouteContext[]> = this.navFacade.tabs$.pipe(tap(console.log));
 
-  @ViewChild(Tabs) tabs: Tabs;
+  @ViewChild(Tabs) tabsEl: Tabs;
 
   constructor(
     public navCtrl: NavController,
@@ -29,7 +30,7 @@ export class TabsPage {
     public navFacade: NavFacade,
     public nav: NavProvider,
   ) {
-    this.navFacade.setTabs(() => this.tabs);
+    this.navFacade.setTabs(() => this.tabsEl);
   }
 
   ionViewDidLoad() {
@@ -37,7 +38,7 @@ export class TabsPage {
   }
 
   getRoot(id: string): any {
-    this.nav.getPage(id);
+    return this.nav.getPage(id);
   }
 
 }

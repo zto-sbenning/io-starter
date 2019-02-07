@@ -286,4 +286,11 @@ export class NavEffects {
       this.app.getRootNav().pop()
     )
   );
+  @Effect({ dispatch: false })
+  changeTab$ = this.actions$.pipe(
+    ofType(NavActionType.changeTab),
+    tap((changeTab: ChangeTabNav) =>
+      this.navFacade.tabsAcc().select(NavProvider.routes[changeTab.payload.id].contexts.tabs.idx)
+    )
+  );
 }

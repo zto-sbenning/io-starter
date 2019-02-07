@@ -73,13 +73,13 @@ export const appRoutes: ZtoRoutes = {
         show: true,
         idx: 2,
         name: 'ABOUT',
-        icon: 'informations-circle',
+        icon: 'information-circle',
       },
       tabs: {
         show: true,
         idx: 2,
         name: 'ABOUT',
-        icon: 'informations-circle',
+        icon: 'information-circle',
       },
     }
   },

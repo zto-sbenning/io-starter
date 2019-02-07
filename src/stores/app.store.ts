@@ -4,12 +4,13 @@ import { Injectable } from '@angular/core';
 import { createSelector, select, Store } from '@ngrx/store';
 import { Actions, Effect, ofType } from '@ngrx/effects';
 import { Observable } from 'rxjs';
-import { tap, map, filter, skip, distinctUntilChanged, switchMap, first, mergeMap } from 'rxjs/operators';
+import { tap, map, filter, skip, distinctUntilChanged, switchMap, first, mergeMap, withLatestFrom } from 'rxjs/operators';
 import { Message, RequestMessage, ResponseMessage } from '../models/message';
 import { LoadingController, AlertController, Loading, Alert, Platform } from 'ionic-angular';
 import { LoadRequestStorage, StorageActionType, LoadResponseStorage } from './storage.store';
 import { ChangeRootNav } from './nav.store';
 import { correlated, Uuid } from '../app/app.tools';
+import { UserCredentials, AutoSignInRequestUser, UserActionType, AutoSignInResponseUser } from './user.store';
 
 
 
@@ -206,16 +207,36 @@ export class AppEffects {
       const loadResponse$ = this.actions$.pipe(
         correlated([StorageActionType.loadResponse, AppActionType.setError], id),
         map((response: LoadResponseStorage | SetErrorApp) => {
-          return response.type === StorageActionType.loadResponse ? response.payload.entries.FIRST_USE : true;
+          return response.type === StorageActionType.loadResponse
+            ? {
+              firstUse: response.payload.entries.FIRST_USE,
+              credentials: response.payload.entries.USER_CREDENTIALS
+            } : { firstUse: true };
         }),
-        mergeMap((firstUse: boolean) => [
-          new ChangeRootNav({ id: firstUse === false ? 'WELCOME' : 'FIRST_USE' }, id),
-          new InitializeResponseApp(undefined, id),
-          new SetReadyApp({ ready: true }, id),
-        ]),
+        map((data: { firstUse: boolean, credentials: UserCredentials }) => ({
+          ...data,
+          firstPageId: data.firstUse === false ? 'WELCOME' : 'FIRST_USE',
+        })),
+        switchMap<any, any>((data: { firstPageId: string, credentials: UserCredentials }) => {
+          return data.credentials
+            ? Observable.of<any>(
+              new AutoSignInRequestUser({ credentials: data.credentials }, id),
+              new InitializeResponseApp(undefined, id),
+            )
+            : Observable.of<any>(
+              new ChangeRootNav({ id: data.firstPageId }, id),
+              new InitializeResponseApp(undefined, id),
+              new SetReadyApp({ ready: true }, id),
+            );
+        }),
       );
       return Observable.concat(initialize$, loadRequest$, loadResponse$);
     }),
+  );
+  @Effect({ dispatch: true })
+  onAutoSignInResponse$ = this.actions$.pipe(
+    ofType(UserActionType.autoSignInResponse),
+    map((autoSignInResponse: AutoSignInResponseUser) => new SetReadyApp({ ready: true }, autoSignInResponse.correlationId))
   );
   /**
    * If a Message include a startLoading field set to true, increment loading ref count

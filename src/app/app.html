@@ -11,7 +11,8 @@
       <ion-list>
         <ng-container *ngFor="let p of menu$ | async">
           <button menuClose ion-item *ngIf="p.show" (click)="openPage(p.id)">
-            {{ p.name }}
+            <span item-start>{{ p.name }}</span>
+            <ion-icon item-end name="{{ p.icon }}"></ion-icon>
           </button>
         </ng-container>
       </ion-list>
@@ -20,6 +21,6 @@
   </ion-menu>
 
   <!-- Disable swipe-to-go-back because it's poor UX to combine STGB with side menus -->
-  <ion-nav [root]="getPage(root)" #content swipeBackEnabled="false"></ion-nav>
+  <ion-nav [root]="getPage(root)" #content></ion-nav>
 
 </ng-container>

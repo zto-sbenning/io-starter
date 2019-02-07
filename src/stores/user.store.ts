@@ -6,6 +6,8 @@ import { tap, map, catchError, switchMap } from 'rxjs/operators';
 import { RequestMessage, ResponseMessage } from '../models/message';
 import { SetErrorApp } from './app.store';
 import { UserProvider } from '../providers/user/user';
+import { ChangeRootNav } from './nav.store';
+import { SaveRequestStorage } from './storage.store';
 
 export interface UserToken {
   token: string;
@@ -344,5 +346,27 @@ export class UserEffects {
       map((response: { profil: UserProfil, token: UserToken }) => new AutoSignInResponseUser(response, autoSignInRequest.correlationId)),
       catchError((error: Error) => Observable.of(new SetErrorApp({ error }, autoSignInRequest.correlationId))),
     )),
+  );
+  @Effect({ dispatch: true })
+  gotoTabsOnSignInResponse$ = this.actions$.pipe(
+    ofType(UserActionType.signInResponse, UserActionType.autoSignInResponse),
+    map(() => new ChangeRootNav({ id: 'TABS' })),
+  );
+  @Effect({ dispatch: true })
+  saveCredentialsOnSignInResponse$ = this.actions$.pipe(
+    ofType(UserActionType.signInResponse, UserActionType.autoSignInResponse),
+    map((response: SignInResponseUser | AutoSignInResponseUser) => new SaveRequestStorage({
+      entries: {
+        USER_CREDENTIALS: {
+          login: response.payload.profil.email,
+          password: response.payload.profil.password,
+        }
+      }
+    })),
+  );
+  @Effect({ dispatch: true })
+  gotoWelcomeOnSignUpResponse$ = this.actions$.pipe(
+    ofType(UserActionType.signUpResponse),
+    map(() => new ChangeRootNav({ id: 'WELCOME' })),
   );
 }

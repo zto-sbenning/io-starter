@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { NavFacade } from '../../stores/nav.store';
+import { StorageFacade } from '../../stores/storage.store';
 
 /**
  * Generated class for the FirstUsePage page.
@@ -17,12 +19,19 @@ export class FirstUsePage {
 
   constructor(
     public navCtrl: NavController,
-    public navParams: NavParams
+    public navParams: NavParams,
+    public navFacade: NavFacade,
+    public storageFacade: StorageFacade,
   ) {
   }
 
   ionViewDidLoad() {
     console.log('ionViewDidLoad FirstUsePage');
+  }
+
+  getStarted() {
+    this.storageFacade.saveRequest({ entries: { FIRST_USE: false } });
+    this.navFacade.changeRoot({ id: 'WELCOME' });
   }
 
 }
