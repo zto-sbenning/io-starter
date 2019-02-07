@@ -93,9 +93,11 @@ export class ${capSelector}Effects {
     public ${selector}Facade: ${capSelector}Facade,
   ) {}
 ${all(schema.actions, (name) => `  @Effect({ dispatch: false })
-  ${name}$ = this.actions$.pipe(
+  ${name}Log$ = this.actions$.pipe(
     ofType(${typeEnum}.${name}),
-    tap((${name}: ${cap(name)}${capSelector}) => console.log('${capSelector}Effects@${name}: ', ${name}))
+    tap((${name}: ${cap(name)}${capSelector}) => {
+      console.log('${capSelector}Effects@${name}: ', ${name});
+    })
   );`)}
 }
 `;

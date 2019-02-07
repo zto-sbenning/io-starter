@@ -1,0 +1,81 @@
+{
+    "defs": {
+      "UserToken": {
+        "type": "interface",
+        "value": {
+          "token": "string"
+        }
+      },
+      "UserCredentials": {
+        "type": "interface",
+        "value": {
+          "login": "string",
+          "password": "string"
+        }
+      },
+      "UserProfil": {
+        "type": "interface",
+        "value": {
+          "id": "string",
+          "email": "string",
+          "password": "string",
+          "username": "string"
+        }
+      }
+    },
+    "selector": "user",
+    "state": {
+        "authentified": "boolean",
+        "token": "UserToken",
+        "profil": "UserProfil",
+        "credentials": "UserCredentials"
+    },
+    "initial": {
+        "authentified": false,
+        "token": null,
+        "profil": null,
+        "credentials": null
+    },
+    "actions": {
+        "signUpRequest": {
+            "type": "RequestMessage",
+            "value": "{ profil: Partial<UserProfil> }"
+        },
+        "signUpResponse": {
+            "type": "ResponseMessage",
+            "value": "{ profil: UserProfil }"
+        },
+        "signInRequest": {
+            "type": "RequestMessage",
+            "value": "{ credentials: UserCredentials }"
+        },
+        "signInResponse": {
+            "type": "ResponseMessage",
+            "value": "{ profil: UserProfil, token: UserToken }"
+        },
+        "signOutRequest": {
+            "type": "RequestMessage",
+            "value": "void"
+        },
+        "signOutResponse": {
+            "type": "ResponseMessage",
+            "value": "void"
+        },
+        "getProfilRequest": {
+            "type": "RequestMessage",
+            "value": "{ id: string }"
+        },
+        "getProfilResponse": {
+            "type": "ResponseMessage",
+            "value": "{ profil: UserProfil }"
+        },
+        "updateProfilRequest": {
+            "type": "RequestMessage",
+            "value": "{ id: string, changes: Partial<UserProfil> }"
+        },
+        "updateProfilResponse": {
+            "type": "ResponseMessage",
+            "value": "{ profil: UserProfil }"
+        }
+    }
+}

@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Component, ViewChild } from '@angular/core';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { IonicPage, NavController, NavParams, Navbar } from 'ionic-angular';
+import { NavFacade } from '../../stores/nav.store';
 
 /**
  * Generated class for the SignInPage page.
@@ -15,11 +17,38 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 })
 export class SignInPage {
 
-  constructor(public navCtrl: NavController, public navParams: NavParams) {
+  @ViewChild(Navbar) navBar: Navbar;
+
+  signInForm: FormGroup;
+  emailCtrl: FormControl;
+  passwordCtrl: FormControl;
+
+  constructor(
+    public navFacade: NavFacade,
+    public navCtrl: NavController,
+    public navParams: NavParams,
+  ) {
+  }
+
+  createForm() {
+    this.emailCtrl = new FormControl('', [Validators.required]),
+    this.passwordCtrl = new FormControl('', [Validators.required]),
+    this.signInForm = new FormGroup({
+
+    });
   }
 
   ionViewDidLoad() {
     console.log('ionViewDidLoad SignInPage');
+    this.navBar.backButtonClick = () => this.back();
+  }
+
+  back() {
+    this.navFacade.popOnRoot();
+  }
+
+  signIn() {
+    console.log('Should sign in: ', this.signInForm.value);
   }
 
 }

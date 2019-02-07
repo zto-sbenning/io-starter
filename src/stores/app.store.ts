@@ -6,9 +6,10 @@ import { Actions, Effect, ofType } from '@ngrx/effects';
 import { Observable } from 'rxjs';
 import { tap, map, filter, skip, distinctUntilChanged, switchMap, first, mergeMap } from 'rxjs/operators';
 import { Message, RequestMessage, ResponseMessage } from '../models/message';
-import { LoadingController, AlertController, Loading, Alert } from 'ionic-angular';
+import { LoadingController, AlertController, Loading, Alert, Platform } from 'ionic-angular';
 import { LoadRequestStorage, StorageActionType, LoadResponseStorage } from './storage.store';
 import { ChangeRootNav } from './nav.store';
+import { correlated, Uuid } from '../app/app.tools';
 
 
 
@@ -18,7 +19,7 @@ export interface AppState {
   loading: boolean;
   error: Error;
 }
-  
+
 export const initialAppState: AppState = {
   ready: false,
   loadingCountRef: 0,
@@ -43,14 +44,14 @@ export enum AppActionType {
   initializeRequest = '[App] Initialize Request',
   initializeResponse = '[App] Initialize Response',
 }
-  
+
 export class SetReadyApp extends Message<{ ready: boolean }> {
   type = AppActionType.setReady;
 }
 export class SetLoadingApp extends Message<{ loading: boolean }> {
   type = AppActionType.setLoading;
 }
-export class SetErrorApp extends Message<{ error: Error }> {
+export class SetErrorApp extends ResponseMessage<{ error: Error }> {
   type = AppActionType.setError;
 }
 export class LoadingStartApp extends Message<void> {
@@ -111,7 +112,7 @@ export function appStateReducer(state: AppState = initialAppState, action: AppAc
 @Injectable()
 export class AppFacade {
   app$: Observable<AppState> = this.store.pipe(select(selectAppState));
-  ready$: Observable<boolean> = this.store.pipe(select(selectAppReady));
+  ready$: Observable<boolean> = this.store.pipe(select(selectAppReady), filter((ready: boolean) => ready));
   loadingCountRef$: Observable<number> = this.store.pipe(select(selectAppLoadingCountRef));
   loading$: Observable<boolean> = this.store.pipe(select(selectAppLoading));
   error$: Observable<Error> = this.store.pipe(select(selectAppError));
@@ -149,7 +150,8 @@ export class AppEffects {
     public actions$: Actions,
     public appFacade: AppFacade,
     public loadingCtrl: LoadingController,
-    public alertCtrl: AlertController
+    public alertCtrl: AlertController,
+    public platform: Platform
   ) {}
   @Effect({ dispatch: false })
   setReadyLog$ = this.actions$.pipe(
@@ -187,57 +189,53 @@ export class AppEffects {
     tap((initializeResponse: InitializeResponseApp) => console.log('AppEffects@initializeResponse: ', initializeResponse))
   );
 
-  @Effect()
-  initialize$ = Observable.timer(0).pipe(
-    map(() => new InitializeRequestApp(undefined))
-  );
-  @Effect()
-  initializeRequest$ = this.actions$.pipe(
-    ofType(AppActionType.initializeRequest),
-    switchMap((initialize: InitializeRequestApp) => {
-      const loadRequest$ = Observable.of(new LoadRequestStorage(undefined, initialize.correlationId));
+  /**
+   * Initialize application
+   *  - 1) dispatch Initialize App Request
+   *  - 2) dispatch Load Storage Request
+   *  - 3) wait either for Load Storage Response or App Error
+   *  - 4) map to FIRST_USE state or true if an erroroccured
+   *  - 5) dispatch the first page state (based on FIRST_USE) an the ready state
+   */
+  @Effect({ dispatch: true })
+  initialize$ = Observable.defer(() => Observable.fromPromise(this.platform.ready())).pipe(
+    switchMap(() => {
+      const id = Uuid();
+      const initialize$ = Observable.of(new InitializeRequestApp(undefined, id));
+      const loadRequest$ = Observable.of(new LoadRequestStorage(undefined, id));
       const loadResponse$ = this.actions$.pipe(
-        ofType(StorageActionType.loadResponse),
-        filter((loadResponse: LoadResponseStorage) => loadResponse.correlationId === initialize.correlationId),
-        first(),
+        correlated([StorageActionType.loadResponse, AppActionType.setError], id),
+        map((response: LoadResponseStorage | SetErrorApp) => {
+          return response.type === StorageActionType.loadResponse ? response.payload.entries.FIRST_USE : true;
+        }),
+        mergeMap((firstUse: boolean) => [
+          new ChangeRootNav({ id: firstUse === false ? 'WELCOME' : 'FIRST_USE' }, id),
+          new InitializeResponseApp(undefined, id),
+          new SetReadyApp({ ready: true }, id),
+        ]),
       );
-      const onLoadResponse$ = loadResponse$.pipe(
-        map((loadResponse: LoadResponseStorage) => loadResponse.payload.entries.FIRST_USE),
-        mergeMap((status: boolean) => status === false
-          ? [
-            new InitializeResponseApp(undefined, initialize.correlationId),
-            new SetReadyApp({ ready: true }, initialize.correlationId),
-            new ChangeRootNav({ id: 'WELCOME' })
-          ] as any
-          : [
-            new InitializeResponseApp(undefined, initialize.correlationId),
-            new SetReadyApp({ ready: true }, initialize.correlationId),
-            new ChangeRootNav({ id: 'FIRST_USE' })
-          ] as any)
-      );
-      return Observable.concat(loadRequest$, onLoadResponse$);
-    })
+      return Observable.concat(initialize$, loadRequest$, loadResponse$);
+    }),
   );
-  @Effect()
-  loadingStartOnRequest$ = this.actions$.pipe(
-    filter((request: RequestMessage) => request.startLoading === true),
-    map((request: RequestMessage) => new LoadingStartApp(undefined, request.correlationId)),
-  );
-  @Effect()
-  loadingStopOnResponse$ = this.actions$.pipe(
-      filter((response: ResponseMessage) => response.stopLoading === true),
-      map((response: ResponseMessage) => new LoadingStopApp(undefined, response.correlationId))
-    );
+  /**
+   * If a Message include a startLoading field set to true, increment loading ref count
+   */
   @Effect({ dispatch: true })
   loadingStartMap$ = this.actions$.pipe(
-    ofType(AppActionType.loadingStart),
-    map((loadingStart: LoadingStartApp) => new SetLoadingApp({ loading: true }, loadingStart.correlationId)),
+    filter((request: RequestMessage) => request.startLoading === true),
+    map((request: RequestMessage) => new SetLoadingApp({ loading: true }, request.correlationId)),
   );
+  /**
+   * If a Message include a stopLoading field set to true, decrement loading ref count
+   */
   @Effect({ dispatch: true })
   loadingStopMap$ = this.actions$.pipe(
-    ofType(AppActionType.loadingStop),
-    map((loadingStop: LoadingStopApp) => new SetLoadingApp({ loading: false }, loadingStop.correlationId)),
+    filter((response: ResponseMessage) => response.stopLoading === true),
+    map((response: ResponseMessage) => new SetLoadingApp({ loading: false }, response.correlationId)),
   );
+  /**
+   * On loading state changes, start or stop the loader
+   */
   @Effect({ dispatch: false })
   loading$ = this.appFacade.loading$.pipe(
     skip(1),
@@ -252,6 +250,9 @@ export class AppEffects {
       }
     })
   );
+  /**
+   * On error state changes, start or stop the error alert
+   */
   @Effect({ dispatch: false })
   error$ = this.appFacade.error$.pipe(
     skip(1),
@@ -261,9 +262,7 @@ export class AppEffects {
         this.currentAlert = this.alertCtrl.create({
           title: error.name,
           message: error.message,
-          buttons: [
-            { text: 'Ok' }
-          ]
+          buttons: [{ text: 'Ok' }]
         });
         this.currentAlert.onDidDismiss(() => this.currentAlert = undefined);
         this.currentAlert.present();

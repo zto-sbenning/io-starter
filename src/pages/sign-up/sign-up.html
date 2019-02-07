@@ -12,4 +12,12 @@
 
 <ion-content padding>
 
+  <form [formGroup]="signUpForm" (submit)="signUp()">
+    <ion-input type="text" placeholder="Email" [formControl]="emailCtrl"></ion-input>
+    <ion-input type="text" placeholder="User Name" [formControl]="usernameCtrl"></ion-input>
+    <ion-input type="password" placeholder="Password" [formControl]="passwordCtrl"></ion-input>
+    <ion-input type="password" placeholder="Confirm Password" [formControl]="confirmPasswordCtrl"></ion-input>
+    <button type="submit" ion-button [disabled]="signUpForm.invalid">SIGN UP</button>
+  </form>
+
 </ion-content>

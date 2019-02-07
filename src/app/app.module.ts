@@ -34,6 +34,7 @@ import { appRoutes } from './app.routes';
 import { StorageFacade, StorageEffects } from '../stores/storage.store';
 import { StoreGeneratorProvider } from '../providers/store-generator/store-generator';
 import { AppEffects, AppFacade } from '../stores/app.store';
+import { UserFacade, UserEffects } from '../stores/user.store';
 
 @NgModule({
   declarations: [
@@ -51,7 +52,8 @@ import { AppEffects, AppFacade } from '../stores/app.store';
     EffectsModule.forRoot([
       NavEffects,
       StorageEffects,
-      AppEffects
+      AppEffects,
+      UserEffects
     ]),
     StoreDevtoolsModule.instrument({ maxAge: 25 }),
     FirstUsePageModule,
@@ -80,7 +82,9 @@ import { AppEffects, AppFacade } from '../stores/app.store';
     StorageFacade,
     StorageEffects,
     AppFacade,
-    AppEffects
+    AppEffects,
+    UserFacade,
+    UserEffects,
   ]
 })
 export class AppModule {}

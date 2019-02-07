@@ -2,9 +2,10 @@ import { Injectable } from '@angular/core';
 import { createSelector, select, Store } from '@ngrx/store';
 import { Actions, Effect, ofType } from '@ngrx/effects';
 import { Observable } from 'rxjs';
-import { tap, switchMap, map, catchError, retry } from 'rxjs/operators';
+import { tap, switchMap, map, catchError, retry, concatMap } from 'rxjs/operators';
 import { RequestMessage, ResponseMessage } from '../models/message';
 import { StorageProvider } from '../providers/storage/storage';
+import { SetErrorApp } from './app.store';
 
 export interface Entries {
   [key: string]: any;
@@ -217,37 +218,42 @@ export class StorageEffects {
     )
   );
 
+  /**
+   * Perform basic side effects operations
+   * A RequestMessage is map either to a ResponseMessage or a SetErrorApp
+   *
+   * concatMap is use to ensure the seriality of responses
+   */
   @Effect()
   loadRequestSE$ = this.actions$.pipe(
     ofType(StorageActionType.loadRequest),
-    switchMap((loadRequest: LoadRequestStorage) => this.storage.load().pipe(
+    concatMap((loadRequest: LoadRequestStorage) => this.storage.load().pipe(
       map((entries: Entries) => new LoadResponseStorage({ entries }, loadRequest.correlationId)),
-      retry(3),
-      catchError((error: Error) => Observable.of({ type: '[ERROR]', payload: { error }, correlationId: loadRequest.correlationId }))
+      catchError((error: Error) => Observable.of(new SetErrorApp({ error }, loadRequest.correlationId)))
     ))
   );
   @Effect()
   saveRequestSE$ = this.actions$.pipe(
     ofType(StorageActionType.saveRequest),
-    switchMap((saveRequest: SaveRequestStorage) => this.storage.save(saveRequest.payload.entries).pipe(
+    concatMap((saveRequest: SaveRequestStorage) => this.storage.save(saveRequest.payload.entries).pipe(
       map(() => new SaveResponseStorage({ entries: saveRequest.payload.entries }, saveRequest.correlationId)),
-      catchError((error: Error) => Observable.of({ type: '[ERROR]', payload: { error }, correlationId: saveRequest.correlationId }))
+      catchError((error: Error) => Observable.of(new SetErrorApp({ error }, saveRequest.correlationId)))
     ))
   );
   @Effect()
   removeRequestSE$ = this.actions$.pipe(
     ofType(StorageActionType.removeRequest),
-    switchMap((removeRequest: RemoveRequestStorage) => this.storage.remove(removeRequest.payload.keys).pipe(
+    concatMap((removeRequest: RemoveRequestStorage) => this.storage.remove(removeRequest.payload.keys).pipe(
       map(() => new RemoveResponseStorage({ keys: removeRequest.payload.keys }, removeRequest.correlationId)),
-      catchError((error: Error) => Observable.of({ type: '[ERROR]', payload: { error }, correlationId: removeRequest.correlationId }))
+      catchError((error: Error) => Observable.of(new SetErrorApp({ error }, removeRequest.correlationId)))
     ))
   );
   @Effect()
   clearRequestSE$ = this.actions$.pipe(
     ofType(StorageActionType.clearRequest),
-    switchMap((clearRequest: ClearRequestStorage) => this.storage.clear().pipe(
+    concatMap((clearRequest: ClearRequestStorage) => this.storage.clear().pipe(
       map(() => new ClearResponseStorage(undefined, clearRequest.correlationId)),
-      catchError((error: Error) => Observable.of({ type: '[ERROR]', payload: { error }, correlationId: clearRequest.correlationId }))
+      catchError((error: Error) => Observable.of(new SetErrorApp({ error }, clearRequest.correlationId)))
     ))
   );
 }

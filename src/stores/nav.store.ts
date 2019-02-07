@@ -40,16 +40,24 @@ export const selectNavTabs = createSelector(
 
 export enum NavActionType {
   changeRoot = '[Nav] Change Root',
+  pushOnRoot = '[Nav] Push On Root',
+  popOnRoot = '[Nav] Pop On Root',
   initMenu = '[Nav] Init Menu',
   initTabs = '[Nav] Init Tabs',
   changeTab = '[Nav] Change Tab',
   setRootOnActiveTab = '[Nav] Set Root OnActive Tab',
-  pushOnActiveTab = '[Nav] Push OnActive Tab',
-  popOnActiveTab = '[Nav] Pop OnActive Tab'
+  pushOnActiveTab = '[Nav] Push On Active Tab',
+  popOnActiveTab = '[Nav] Pop On Active Tab'
 }
 
 export class ChangeRootNav extends Message<{ id: string }> {
   type = NavActionType.changeRoot;
+}
+export class PushOnRootNav extends Message<{ id: string }> {
+  type = NavActionType.pushOnRoot;
+}
+export class PopOnRootNav extends Message<void> {
+  type = NavActionType.popOnRoot;
 }
 export class InitMenuNav extends Message<{ contexts: ZtoRouteContext[] }> {
   type = NavActionType.initMenu;
@@ -72,6 +80,8 @@ export class PopOnActiveTabNav extends Message<{ id: string }> {
 
 export type NavActions =
   | ChangeRootNav
+  | PushOnRootNav
+  | PopOnRootNav
   | InitMenuNav
   | InitTabsNav
   | ChangeTabNav
@@ -104,6 +114,14 @@ export function navStateReducer(
         ...state,
         tabs: p.contexts,
       };
+    }
+    case NavActionType.pushOnRoot: {
+      const p = (action as PushOnRootNav).payload;
+      return state;
+    }
+    case NavActionType.popOnRoot: {
+      const p = (action as PopOnRootNav).payload;
+      return state;
     }
     case NavActionType.changeTab: {
       const p = (action as ChangeTabNav).payload;
@@ -140,6 +158,12 @@ export class NavFacade {
   }
   changeRoot(payload: { id: string }) {
     this.store.dispatch(new ChangeRootNav(payload));
+  }
+  pushOnRoot(payload: { id: string }) {
+    this.store.dispatch(new PushOnRootNav(payload));
+  }
+  popOnRoot() {
+    this.store.dispatch(new PopOnRootNav());
   }
   initMenu(payload: { contexts: ZtoRouteContext[] }) {
     this.store.dispatch(new InitMenuNav(payload));
@@ -180,12 +204,18 @@ export class NavEffects {
     )
   );
   @Effect({ dispatch: false })
-  changeRoot$ = this.actions$.pipe(
-    ofType(NavActionType.changeRoot),
-    tap((changeRoot: ChangeRootNav) => {
-      this.menuCtrl.enable(changeRoot.payload.id === 'TABS');
-      this.app.getRootNav().setRoot(NavProvider.routes[changeRoot.payload.id].page);
-    })
+  pushOnRootLog$ = this.actions$.pipe(
+    ofType(NavActionType.pushOnRoot),
+    tap((pushOnRoot: PushOnRootNav) =>
+      console.log('NavEffects@pushOnRoot: ', pushOnRoot)
+    )
+  );
+  @Effect({ dispatch: false })
+  popOnRootLog$ = this.actions$.pipe(
+    ofType(NavActionType.popOnRoot),
+    tap((popOnRoot: PopOnRootNav) =>
+      console.log('NavEffects@popOnRoot: ', popOnRoot)
+    )
   );
   @Effect({ dispatch: false })
   initMenuLog$ = this.actions$.pipe(
@@ -227,6 +257,33 @@ export class NavEffects {
     ofType(NavActionType.popOnActiveTab),
     tap((popOnActiveTab: PopOnActiveTabNav) =>
       console.log('NavEffects@popOnActiveTab: ', popOnActiveTab)
+    )
+  );
+
+  /**
+   * On Change Root Nav, perform a setRoot operation on the RootNav
+   * If the page is not the TABS one, disable the menu
+   */
+  @Effect({ dispatch: false })
+  changeRoot$ = this.actions$.pipe(
+    ofType(NavActionType.changeRoot),
+    tap((changeRoot: ChangeRootNav) => {
+      this.menuCtrl.enable(changeRoot.payload.id === 'TABS');
+      this.app.getRootNav().setRoot(NavProvider.routes[changeRoot.payload.id].page);
+    })
+  );
+  @Effect({ dispatch: false })
+  pushOnRoot$ = this.actions$.pipe(
+    ofType(NavActionType.pushOnRoot),
+    tap((pushOnRoot: PushOnRootNav) =>
+      this.app.getRootNav().push(NavProvider.routes[pushOnRoot.payload.id].page)
+    )
+  );
+  @Effect({ dispatch: false })
+  popOnRoot$ = this.actions$.pipe(
+    ofType(NavActionType.popOnRoot),
+    tap((popOnRoot: PopOnRootNav) =>
+      this.app.getRootNav().pop()
     )
   );
 }
