@@ -25,8 +25,8 @@ export interface CredentialTokenUserMock {
 
 export class UserMock {
   static usersStorageKey = 'MOCK_USER_USERS';
-  static delay = 2500;
-  static errorRate = 0.3;
+  static delay = 0;
+  static errorRate = 0.1;
 
   list: { [basicAt: string]: CredentialTokenUserMock };
 

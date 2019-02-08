@@ -218,7 +218,7 @@ export class AppEffects {
           firstPageId: data.firstUse === false ? 'WELCOME' : 'FIRST_USE',
         })),
         switchMap<any, any>((data: { firstPageId: string, credentials: UserCredentials }) => {
-          return data.credentials
+          return data.firstPageId === 'WELCOME' && data.credentials
             ? Observable.of<any>(
               new AutoSignInRequestUser({ credentials: data.credentials }, id),
               new InitializeResponseApp(undefined, id),
