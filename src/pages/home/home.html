@@ -13,4 +13,9 @@
 
 <ion-content padding>
 
+  <ion-input type="text" placeholder="Schema File Name" ([ngModel])="filename"></ion-input>
+  <button ion-button color="secondary" (click)="generate()">GENERATE</button>
+
+  <pre>{{ generated }}</pre>
+
 </ion-content>

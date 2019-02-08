@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { StoreGeneratorProvider } from '../../providers/store-generator/store-generator';
+import { tap } from 'rxjs/operators';
 
 /**
  * Generated class for the HomePage page.
@@ -15,11 +17,22 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 })
 export class HomePage {
 
-  constructor(public navCtrl: NavController, public navParams: NavParams) {
+  generated: string;
+  filename: string;
+
+  constructor(
+    public navCtrl: NavController,
+    public navParams: NavParams,
+    public g: StoreGeneratorProvider
+  ) {
   }
 
   ionViewDidLoad() {
     console.log('ionViewDidLoad HomePage');
+  }
+
+  generate() {
+    this.g.generate(`assets/schemas/${this.filename}.json`).pipe(tap(t => this.generated = t)).subscribe();
   }
 
 }
